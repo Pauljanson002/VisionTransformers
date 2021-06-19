@@ -3,11 +3,13 @@ import torch
 import torch.optim as optim
 from torchvision import datasets
 from torchvision.transforms import transforms
+
+from dataset import cifar10
 from models import ViT
 
 
 # global data path
-data_path = './data'
+
 
 
 # training loop need to change it to more general one
@@ -36,31 +38,9 @@ if __name__ == '__main__':
     # initializing the device and model
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model = ViT().to(device)
-
-    cifar10 = datasets.CIFAR10(
-        data_path, train=True, download=False,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(
-                (0.4915, 0.4823, 0.4468),
-                (0.2470, 0.2435, 0.2616)
-            )
-        ])
-    )
-    cifar10_val = datasets.CIFAR10(
-        data_path, train=False, download=False,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(
-                (0.4915, 0.4823, 0.4468),
-                (0.2470, 0.2435, 0.2616)
-            )
-        ])
-    )
     train_loader = torch.utils.data.DataLoader(cifar10, batch_size=64, shuffle=True)
     optimizer = optim.SGD(model.parameters(), lr=1e-2)
     loss_fn = torch.nn.CrossEntropyLoss()
-
     training_loop(100,optimizer,model,loss_fn,train_loader,device)
     torch.save(model.state_dict(), './state_dicts/vit.pt')
 
