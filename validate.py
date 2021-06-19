@@ -1,11 +1,10 @@
 import torch
-
+import argparse
 # todo generalize the dataset
 from torchvision import datasets, transforms
 
 from dataset import cifar10, cifar10_val
 from models import ViT
-
 
 def validate(model, train_loader, val_loader):
     accdict = {}
