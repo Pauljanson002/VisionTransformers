@@ -7,7 +7,6 @@ from dataset import cifar10, cifar10_val
 from models import ViT
 
 def validate(model, train_loader, val_loader):
-    accdict = {}
     for name, loader in [("train", train_loader), ("val", val_loader)]:
         correct = 0
         total = 0
