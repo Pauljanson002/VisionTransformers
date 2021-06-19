@@ -6,7 +6,7 @@ from models.vit import ClassificationHead, PatchEmbedding
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, emb_size: int = 108, num_heads: int = 4, dropout: float = 0.5):
+    def __init__(self, emb_size: int = 108, num_heads: int = 4, dropout: float = 0.1):
         super().__init__()
         self.emb_size = emb_size
         self.num_heads = num_heads
@@ -47,7 +47,7 @@ class ResidualAdd(nn.Module):
 
 
 class FeedForwardBlock(nn.Sequential):
-    def __init__(self, emb_size: int, expansion: int = 4, drop_p: float = 0.5):
+    def __init__(self, emb_size: int, expansion: int = 4, drop_p: float = 0.1):
         super().__init__(
             nn.Linear(emb_size, expansion * emb_size),
             nn.GELU(),
@@ -59,8 +59,8 @@ class FeedForwardBlock(nn.Sequential):
 class TransformerEncoderBlock(nn.Sequential):
     def __init__(self,
                  emb_size: int = 108,
-                 drop_p: float = 0.5,
-                 forward_expansion: int = 2,
+                 drop_p: float = 0.1,
+                 forward_expansion: int = 4,
                  forward_drop_p: float = 0.,
                  **kwargs):
         super().__init__(

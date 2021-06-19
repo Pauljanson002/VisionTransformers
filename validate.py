@@ -4,7 +4,17 @@ import argparse
 from torchvision import datasets, transforms
 
 from dataset import cifar10, cifar10_val
-from models import ViT
+from models import ViT, create_model
+
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser('Vision transformers validation parser')
+
+    # what to validate
+    parser.add_argument('--model', default='vit', type=str)
+    parser.add_argument('--path', default='vit.pt', type=str)
+    return parser
+
 
 def validate(model, train_loader, val_loader):
     for name, loader in [("train", train_loader), ("val", val_loader)]:
@@ -24,14 +34,16 @@ def validate(model, train_loader, val_loader):
 
 
 if __name__ == '__main__':
+    parser = get_arg_parser()
+    args = parser.parse_args()
     train_loader = torch.utils.data.DataLoader(cifar10, batch_size=64,
                                                shuffle=False)
     val_loader = torch.utils.data.DataLoader(cifar10_val, batch_size=64,
                                              shuffle=False)
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
-    model = ViT()
+    model = create_model(args.model)()
     model.to(device=device)
-    model.load_state_dict(torch.load('./state_dicts/vit.pt'))
+    model.load_state_dict(torch.load('./state_dicts/'+args.path))
     print("Model is loaded to %s" % device)
     print("Validation Starting ")
-    validate(model,train_loader,val_loader)
+    validate(model, train_loader, val_loader)
