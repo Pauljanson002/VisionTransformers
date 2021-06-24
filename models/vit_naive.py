@@ -47,7 +47,7 @@ class ResidualAdd(nn.Module):
 
 
 class FeedForwardBlock(nn.Sequential):
-    def __init__(self, emb_size: int, expansion: int = 4, drop_p: float = 0.1):
+    def __init__(self, emb_size: int, expansion: int = 2, drop_p: float = 0.1):
         super().__init__(
             nn.Linear(emb_size, expansion * emb_size),
             nn.GELU(),
