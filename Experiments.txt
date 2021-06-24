@@ -1,0 +1,15 @@
+Model name : Vit-Lite
+Learning rate : 0.005
+warm up : 5
+epoch : 100
+weight_decay : 3e-2
+batch_size : 128
+optimizer : 'adamw'
+savename : 'vit-lite-1'
+
+Argument namespace : --model vit_lite --lr 0.0005 --warmup 5 --epoch 100 --weight_decay 3e-2 --batch_size 128 --model vit_lite --savename vit_lite_1.pt
+--optimizer adamw
+
+Date and time : Jun 24 2021, 7.15pm (IST)
+Final loss
+Epoch 100, Training loss 0.4521762346825027
