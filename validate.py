@@ -80,5 +80,5 @@ if __name__ == '__main__':
     print("Model is loaded to %s" % device)
     print("Validation Starting ")
     # validate(model, train_loader, val_loader)
-    acc1 = validate_ver2(model,val_loader,device=device)
+    acc1 = validate_ver2(model,train_loader,device=device)
     print(acc1)
