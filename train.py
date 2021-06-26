@@ -10,6 +10,7 @@ from torchvision.transforms import transforms
 from dataset import cifar10
 from models import ViT, create_model
 from utils import get_optimizer
+from models.deit import HardDistillationLoss
 
 
 # global data path
@@ -26,11 +27,12 @@ def get_args_parser():
     parser_inside.add_argument('--optimizer', default='sgd', type=str)
     parser_inside.add_argument('--lr', default=1e-2, type=float)
     parser_inside.add_argument('--warmup', default=5, type=int, metavar='N',
-                        help='number of warmup epochs')
+                               help='number of warmup epochs')
     parser_inside.add_argument('--weight_decay', default=0.01, type=float)
     parser_inside.add_argument('--batch_size', default=64, type=int)
     parser_inside.add_argument('--disable-cos', action='store_true',
-                        help='disable cosine lr schedule')
+                               help='disable cosine lr schedule')
+    parser_inside.add_argument('--distill', action='store_true')
 
     return parser_inside
 
@@ -48,15 +50,19 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 
 # training loop need to change it to more general one
-def training_loop(n_epochs, optimizer, model, loss_fn, train_loader, device):
+def training_loop(n_epochs, optimizer, model, loss_fn, train_loader, device,args):
+    model.train()
     for epoch in range(1, n_epochs + 1):
         loss_train = 0.0
-        adjust_learning_rate(optimizer,epoch,args)
+        adjust_learning_rate(optimizer, epoch, args)
         for imgs, labels in train_loader:
             imgs = imgs.to(device=device)  # <1>
             labels = labels.to(device=device)
             outputs = model(imgs)
-            loss = loss_fn(outputs, labels)
+            if args.distill :
+                loss = loss_fn(imgs,outputs,labels)
+            else:
+                loss = loss_fn(outputs, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -79,6 +85,11 @@ if __name__ == '__main__':
     model = create_model(args.model).to(device)
     train_loader = torch.utils.data.DataLoader(cifar10, batch_size=args.batch_size, shuffle=True)
     optimizer = get_optimizer(args.optimizer, model.parameters(), learning_rate=args.lr, weight_decay=args.weight_decay)
-    loss_fn = torch.nn.CrossEntropyLoss()
-    training_loop(args.epochs, optimizer, model, loss_fn, train_loader, device)
+    if args.distill:
+        teacher = create_model('vgg').to(device)
+        teacher.load_state_dict(torch.load('./state_dicts/vgg16.pt'))
+        loss_fn = HardDistillationLoss(teacher, 0.5)
+    else:
+        loss_fn = torch.nn.CrossEntropyLoss()
+    training_loop(args.epochs, optimizer, model, loss_fn, train_loader, device,args)
     torch.save(model.state_dict(), './state_dicts/' + args.savename)
