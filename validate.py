@@ -69,9 +69,9 @@ def validate(model, train_loader, val_loader):
 if __name__ == '__main__':
     parser = get_arg_parser()
     args = parser.parse_args()
-    train_loader = torch.utils.data.DataLoader(cifar10, batch_size=64,
+    train_loader = torch.utils.data.DataLoader(cifar10, batch_size=128,
                                                shuffle=False)
-    val_loader = torch.utils.data.DataLoader(cifar10_val, batch_size=64,
+    val_loader = torch.utils.data.DataLoader(cifar10_val, batch_size=128,
                                              shuffle=False)
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model = create_model(args.model)
@@ -80,5 +80,8 @@ if __name__ == '__main__':
     print("Model is loaded to %s" % device)
     print("Validation Starting ")
     # validate(model, train_loader, val_loader)
-    acc1 = validate_ver2(model,val_loader,device=device)
+    model.eval()
+    acc1 = validate_ver2(model,train_loader,device=device)
+    acc2 = validate_ver2(model,val_loader,device=device)
     print(acc1)
+    print(f"Test accuracy {acc2:.2f}")
