@@ -45,4 +45,5 @@ Test accuracy 64.57
 
 --------------------------------------------------------Next -----------------------------------------------------------------------
 CCT number of convolutional layers = 1
-
+Namespace(batch_size=64, disable_cos=False, distill=False, epochs=100, lr=0.001, model='cct', optimizer='adamw', savename='cct.pt', warmup=5, weight_decay=0.01)
+Estimated Training time = 50 min

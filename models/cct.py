@@ -38,7 +38,7 @@ class Tokenizer(nn.Module):
         self.flattener = nn.Flatten(2, 3)
         self.apply(self.init_weight)
 
-    def sequence_length(self, n_channels=3, height=224, width=224):
+    def sequence_length(self, n_channels=3, height=32, width=32):
         return self.forward(torch.zeros((1, n_channels, height, width))).shape[1]
 
     def forward(self, x):
@@ -53,17 +53,17 @@ class Tokenizer(nn.Module):
 class TransformerClassifier(nn.Module):
     def __init__(self,
                  seq_pool=True,
-                 embedding_dim=768,
-                 num_layers=12,
-                 num_heads=12,
-                 mlp_ratio=4.0,
-                 num_classes=1000,
+                 embedding_dim=256,
+                 num_layers=2,
+                 num_heads=2,
+                 mlp_ratio=2,
+                 num_classes=10,
                  dropout_rate=0.1,
                  attention_dropout=0.1,
                  stochastic_depth_rate=0.1,
                  positional_embedding='sine',
                  sequence_length=None,
-                 *args, **kwargs):
+                 ):
         super().__init__()
         positional_embedding = positional_embedding if \
             positional_embedding in ['sine', 'learnable', 'none'] else 'sine'
@@ -152,6 +152,9 @@ class TransformerClassifier(nn.Module):
 
 class CCT(nn.Module):
     def __init__(self,
+                 num_layers = 2,
+                 num_heads = 2,
+                 mlp_ratio = 1,
                  img_size=32,
                  embedding_dim=256,
                  n_input_channels=3,
@@ -179,6 +182,9 @@ class CCT(nn.Module):
                                    conv_bias=False)
 
         self.classifier = TransformerClassifier(
+            num_layers=num_layers,
+            num_heads=num_heads,
+            mlp_ratio=mlp_ratio,
             sequence_length=self.tokenizer.sequence_length(n_channels=n_input_channels,
                                                            height=img_size,
                                                            width=img_size),
@@ -186,7 +192,7 @@ class CCT(nn.Module):
             seq_pool=True,
             dropout_rate=0.,
             attention_dropout=0.1,
-            stochastic_depth=0.1,
+            stochastic_depth_rate=0.1,
             *args, **kwargs)
 
     def forward(self, x):
