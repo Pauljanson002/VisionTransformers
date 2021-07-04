@@ -79,7 +79,7 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load('./state_dicts/' + args.path))
     print("Model is loaded to %s" % device)
     print("Validation Starting ")
-    # validate(model, train_loader, val_loader)
+    validate(model, train_loader, val_loader)
     model.eval()
     acc1 = validate_ver2(model,train_loader,device=device)
     acc2 = validate_ver2(model,val_loader,device=device)
