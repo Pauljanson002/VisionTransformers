@@ -3,7 +3,7 @@ from models.vit_naive import ViTNaive
 from models.vgg import VGG
 from models.deit import Deit
 from models.cct import CCT
-
+from models.ViTLite import ViTLite
 
 def create_model(model_name: str):
     models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct']
@@ -11,7 +11,13 @@ def create_model(model_name: str):
         raise NotImplementedError("The model you asked is not implemented")
     else:
         if model_name == 'vit_lite':
-            return ViTNaive(depth=7, emb_size=256)
+            return ViTLite(
+                num_layers = 7,
+                num_heads = 4,
+                mlp_ratio = 2,
+                embedding_dim= 256,
+                patch_size= 4,
+            )
         elif model_name == 'vit_naive':
             return ViTNaive()
         elif model_name == 'vgg':
