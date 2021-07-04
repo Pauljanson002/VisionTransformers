@@ -20,7 +20,7 @@ def get_parser():
 
     # What is workers?
 
-    parser.add_argument('--savename', type=str, default=str(datetime.datetime.now()))
+    parser.add_argument('--savename', type=str, default='temp.pt')
 
     # Training parameters
 
@@ -108,15 +108,20 @@ def plot_data(training_losses, training_accuracies, validation_losses, validatio
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(2, 1)
     x = [i for i in range(1, epochs + 1)]
-    axes[0].plot(x, training_losses, x, validation_losses)
+    axes[0].plot(x, training_losses, label='training')
+    axes[0].plot(x, validation_losses, label='validation')
     axes[0].set_xlabel('epochs')
     axes[0].set_ylabel('losses')
     axes[0].legend()
-    axes[1].plot(x, training_accuracies, x, validation_accuracies)
+    axes[1].plot(x, training_accuracies, label='training')
+    axes[1].plot(x, validation_accuracies, label='validation')
     axes[1].set_xlabel('epochs')
     axes[1].set_ylabel('accuracies')
     axes[1].legend()
-    fig.savefig('./plots/' + str(datetime.datetime.now()), dpi=fig.dpi)
+    try:
+        fig.savefig('./plots/temporary.png', dpi=fig.dpi)
+    except FileNotFoundError:
+        fig.savefig('./temporary.png', dpi=fig.dpi)
 
 
 if __name__ == '__main__':
@@ -166,4 +171,5 @@ if __name__ == '__main__':
     try:
         torch.save(model.state_dict(), f"./state_dicts/{args.savename}")
     except FileNotFoundError:
-        torch.save(model.state_dict(), './')
+        torch.save(model.state_dict(), f'./{args.savename}')
+    plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, epoch)
