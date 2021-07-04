@@ -1,6 +1,6 @@
 import numpy as np
-from utils import *
 import random
+from utils.augmentations import *
 
 
 class SubPolicy(object):

@@ -1,5 +1,5 @@
 # credits Deep voltaire
-from utils import SubPolicy
+from utils.augmentations import SubPolicy
 import random
 
 
