@@ -67,6 +67,7 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
         avg_loss, avg_acc1 = (total_loss / n), (total_acc / n)
         if i % 10 == 0:
             print(f"Training loss at epoch : {epoch}, Loss = {avg_loss:.4e} , Top-1 {avg_acc1:6.2f}")
+    return (total_loss / n), (total_acc / n)
 
 
 def adjust_learning_rate(optimizer, epoch, args):
@@ -100,7 +101,22 @@ def validate_after_epoch(val_loader, model, loss_fn, device, args, epoch=None, t
     avg_loss, avg_acc1 = (total_loss / n), (total_accuracy / n)
     total_mins = -1 if time_begin is None else (time() - time_begin) / 60
     print(f"Epoch : {epoch} Top-1 {avg_acc1:6.2f} Time:{total_mins:.2f}")
-    return avg_acc1
+    return avg_loss, avg_acc1
+
+
+def plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, epochs):
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(2, 1)
+    x = [i for i in range(1, epochs + 1)]
+    axes[0].plot(x, training_losses, x, validation_losses)
+    axes[0].set_xlabel('epochs')
+    axes[0].set_ylabel('losses')
+    axes[0].legend()
+    axes[1].plot(x, training_accuracies, x, validation_accuracies)
+    axes[1].set_xlabel('epochs')
+    axes[1].set_ylabel('accuracies')
+    axes[1].legend()
+    fig.savefig('./plots/' + str(datetime.datetime.now()), dpi=fig.dpi)
 
 
 if __name__ == '__main__':
@@ -112,6 +128,13 @@ if __name__ == '__main__':
     test_loader = torch.utils.data.DataLoader(dataset.cifar10_val, batch_size=args.batch_size, shuffle=False)
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
+
+    # For plotting
+    training_losses = []
+    validation_losses = []
+    training_accuracies = []
+    validation_accuracies = []
+
     if args.distill:
         teacher = models.create_model('vgg').to(device)
         teacher.load_state_dict(torch.load('./state_dicts/vgg16.pt'))
@@ -124,11 +147,23 @@ if __name__ == '__main__':
     print(f"On device :{device}  Model : {args.model} ")
     start_time = time()
     for epoch in range(1, args.epoch + 1):
-        adjust_learning_rate(optimizer,epoch,args)
-        train_one_epoch(train_loader, model, loss_fn, optimizer, device, epoch, args)
-        acc1 = validate_after_epoch(test_loader, model, loss_fn, device, args, epoch=epoch, time_begin=start_time)
-        best_acc1 = max(acc1, best_acc1)
+        adjust_learning_rate(optimizer, epoch, args)
+        avg_training_loss, avg_training_acc = train_one_epoch(train_loader, model, loss_fn, optimizer, device, epoch,
+                                                              args)
+        avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss_fn, device, args,
+                                                                           epoch=epoch, time_begin=start_time)
+        best_acc1 = max(average_validation_acc, best_acc1)
+
+        # For plotting
+        training_losses.append(avg_training_loss)
+        training_accuracies.append(avg_training_acc)
+        validation_losses.append(avg_validation_loss)
+        validation_accuracies.append(average_validation_acc)
+
     total_mins = (time() - start_time) / 60
     print(f"Training finished in {total_mins:.2f} mins ")
-    print(f"Best top-1 : {best_acc1:.2f} , final top-1:{acc1:.2f}")
-    torch.save(model.state_dict(), f"./state_dicts/{args.savename}")
+    print(f"Best top-1 : {best_acc1:.2f} , final top-1:{average_validation_acc:.2f}")
+    try:
+        torch.save(model.state_dict(), f"./state_dicts/{args.savename}")
+    except FileNotFoundError:
+        torch.save(model.state_dict(), './')
