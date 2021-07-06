@@ -21,7 +21,7 @@ def create_model(model_name: str):
         elif model_name =='vit_lite_2':
             return ViTLite(
                 num_layers = 14,
-                num_heads = 5,
+                num_heads = 4,
                 mlp_ratio = 2,
                 embedding_dim= 256,
                 patch_size= 4
