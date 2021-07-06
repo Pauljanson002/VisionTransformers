@@ -6,7 +6,7 @@ from models.cct import CCT
 from models.ViTLite import ViTLite
 
 def create_model(model_name: str):
-    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct']
+    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2']
     if model_name not in models:
         raise NotImplementedError("The model you asked is not implemented")
     else:
