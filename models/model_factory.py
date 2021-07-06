@@ -18,6 +18,14 @@ def create_model(model_name: str):
                 embedding_dim= 256,
                 patch_size= 4,
             )
+        elif model_name =='vit_lite_2':
+            return ViTLite(
+                num_layers = 14,
+                num_heads = 5,
+                mlp_ratio = 2,
+                embedding_dim= 256,
+                patch_size= 4
+            )
         elif model_name == 'vit_naive':
             return ViTNaive()
         elif model_name == 'vgg':
