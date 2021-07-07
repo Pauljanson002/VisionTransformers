@@ -89,11 +89,11 @@ def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
     return model
 
 
-def fine_tune(limit=7):
-    model = create_model('vit_lite')
+def fine_tune(limit=14):
+    model = create_model('vit_lite_2')
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
-    model.load_state_dict(torch.load('./state_dicts/vit_lite_85_53.pt'))
+    model.load_state_dict(torch.load('./state_dicts/vit_lite_v2.pt'))
     print(f"Model : Vit is loaded to {device}")
 
     for param in model.parameters():
@@ -106,11 +106,11 @@ def fine_tune(limit=7):
     optimizer = get_optimizer('adamw', model.parameters(), 0.001, 3e-2)
     cos_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer, 100)
     print(model)
-    model_fine_tuned = train_model(model, criterion, optimizer, cos_lr_scheduler, device, 30)
+    model_fine_tuned = train_model(model, criterion, optimizer, cos_lr_scheduler, device, 20)
 
 
 if __name__ == '__main__':
     print("Fine tuning script")
-    for i in range(7,0,-1):
+    for i in range(14,0,-1):
         print(f"Number of transformer layers Active {i}")
         fine_tune(limit=i)
