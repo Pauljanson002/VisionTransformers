@@ -9,6 +9,7 @@ from models import create_model
 from utils import get_optimizer
 from torch.optim import lr_scheduler
 
+accuracies = []
 
 def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
     since = time.time()
@@ -83,7 +84,7 @@ def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
-
+    accuracies.append(best_acc)
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
@@ -114,3 +115,4 @@ if __name__ == '__main__':
     for i in range(14,0,-1):
         print(f"Number of transformer layers Active {i}")
         fine_tune(limit=i)
+    print(accuracies)
