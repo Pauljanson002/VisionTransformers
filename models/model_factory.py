@@ -33,10 +33,10 @@ def create_model(model_name: str):
         elif model_name == 'deit':
             return Deit(emb_size=108)
         elif model_name == 'cct':
-            return CCT(num_layers=2,
-                       num_heads=2,
-                       mlp_ratio=1,
-                       embedding_dim=128,
+            return CCT(num_layers=14,
+                       num_heads=4,
+                       mlp_ratio=2,
+                       embedding_dim=256,
                        kernel_size=3,
                        stride=1,
                        padding=1)
