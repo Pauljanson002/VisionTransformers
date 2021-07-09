@@ -91,11 +91,11 @@ def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
 
 
 def fine_tune(limit=14):
-    model = create_model('vit_lite_2')
+    model = create_model('cct')
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
-    model.load_state_dict(torch.load('./state_dicts/vit_lite_v2.pt'))
-    print(f"Model : Vit is loaded to {device}")
+    model.load_state_dict(torch.load('./state_dicts/cct_v2.pt'))
+    print(f"Model : is loaded to {device}")
 
     for param in model.parameters():
         param.requires_grad = False
