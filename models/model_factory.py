@@ -4,9 +4,10 @@ from models.vgg import VGG
 from models.deit import Deit
 from models.cct import CCT
 from models.ViTLite import ViTLite
+from models.DeiTLite import DeiTLite
 
 def create_model(model_name: str):
-    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2']
+    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2','deit_lite']
     if model_name not in models:
         raise NotImplementedError("The model you asked is not implemented")
     else:
@@ -40,5 +41,13 @@ def create_model(model_name: str):
                        kernel_size=3,
                        stride=1,
                        padding=1)
+        elif model_name == 'deit_lite':
+            return DeiTLite(
+                num_layers=14,
+                num_heads=4,
+                mlp_ratio=2,
+                embedding_dim=256,
+                patch_size=4
+            )
         else:
             return ViT()

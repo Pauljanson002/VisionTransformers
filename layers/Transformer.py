@@ -17,6 +17,7 @@ class Transformer(nn.Module):
                  stochastic_depth_rate=0.,
                  positional_embedding='sine',
                  sequence_length=None,
+                 distill=False,
                  *args, **kwargs):
         super().__init__()
         positional_embedding = positional_embedding if \
@@ -25,6 +26,7 @@ class Transformer(nn.Module):
         self.embedding_dim = embedding_dim
         self.sequence_length = sequence_length
         self.seq_pool = seq_pool
+        self.distill = distill
 
         assert sequence_length is not None or positional_embedding == 'none', \
             f"Positional embedding is set to {positional_embedding} and" \
@@ -34,6 +36,9 @@ class Transformer(nn.Module):
             sequence_length += 1
             self.class_emb = nn.Parameter(torch.zeros(1, 1, self.embedding_dim),
                                           requires_grad=True)
+            if distill:
+                sequence_length += 1
+                self.dist_emb = nn.Parameter(torch.zeros(1, 1, self.embedding_dim), requires_grad=True)
         else:
             self.attention_pool = nn.Linear(self.embedding_dim, 1)
 
@@ -58,6 +63,8 @@ class Transformer(nn.Module):
         self.norm = nn.LayerNorm(embedding_dim)
 
         self.fc = nn.Linear(embedding_dim, num_classes)
+        if distill:
+            self.dist_fc = nn.Linear(embedding_dim, num_classes)
         self.apply(self.init_weight)
 
     def forward(self, x):
@@ -66,7 +73,11 @@ class Transformer(nn.Module):
 
         if not self.seq_pool:
             cls_token = self.class_emb.expand(x.shape[0], -1, -1)
-            x = torch.cat((cls_token, x), dim=1)
+            if self.distill:
+                dis_token = self.dist_emb.expand(x.shape[0], -1, -1)
+                x = torch.cat((cls_token, dis_token, x), dim=1)
+            else:
+                x = torch.cat((cls_token, x), dim=1)
 
         if self.positional_emb is not None:
             x += self.positional_emb
@@ -79,10 +90,18 @@ class Transformer(nn.Module):
 
         if self.seq_pool:
             x = torch.matmul(F.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
+        elif self.distill:
+            x,dist_x = x[:, 0],x[:, 1]
         else:
             x = x[:, 0]
 
         x = self.fc(x)
+        if self.distill:
+            dist_x = self.dist_fc(dist_x)
+            if self.training:
+                return x, dist_x
+            else:
+                return (x+dist_x)/2
         return x
 
     @staticmethod
