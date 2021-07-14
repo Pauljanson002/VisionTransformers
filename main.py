@@ -84,7 +84,7 @@ def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
-    accuracies.append(best_acc)
+    accuracies.append(best_acc.item())
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
@@ -94,7 +94,7 @@ def fine_tune(limit=14):
     model = create_model('cct')
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
-    model.load_state_dict(torch.load('./state_dicts/cct_v2.pt'))
+    model.load_state_dict(torch.load('./state_dicts/cct_v4.pt'))
     print(f"Model : is loaded to {device}")
 
     for param in model.parameters():

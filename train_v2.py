@@ -57,7 +57,10 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
             loss = loss_fn(images, output, labels)
         else:
             loss = loss_fn(output, labels)
-        acc1 = accuracy(output, labels)
+        if args.distill:
+            acc1 = accuracy(output[0],labels)
+        else:
+            acc1 = accuracy(output, labels)
         n += images.size(0)
         total_loss += float(loss.item() * images.size(0))
         total_acc += float(acc1 * images.size(0))
@@ -141,8 +144,8 @@ if __name__ == '__main__':
     validation_accuracies = []
 
     if args.distill:
-        teacher = models.create_model('vgg').to(device)
-        teacher.load_state_dict(torch.load('./state_dicts/vgg16.pt'))
+        teacher = models.create_model('cct').to(device)
+        teacher.load_state_dict(torch.load('./state_dicts/cct_v4.pt'))
         loss_fn = models.deit.HardDistillationLoss(teacher, 0.5).to(device)
     else:
         loss_fn = torch.nn.CrossEntropyLoss().to(device)
@@ -155,8 +158,13 @@ if __name__ == '__main__':
         adjust_learning_rate(optimizer, epoch, args)
         avg_training_loss, avg_training_acc = train_one_epoch(train_loader, model, loss_fn, optimizer, device, epoch,
                                                               args)
-        avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss_fn, device, args,
-                                                                           epoch=epoch, time_begin=start_time)
+        if args.distill:
+            loss = torch.nn.CrossEntropyLoss().to(device)
+            avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss, device, args,
+                                                                               epoch=epoch, time_begin=start_time)
+        else:
+            avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss_fn, device, args,
+                                                                               epoch=epoch, time_begin=start_time)
         best_acc1 = max(average_validation_acc, best_acc1)
 
         # For plotting
