@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     if args.distill:
         teacher = models.create_model('cct').to(device)
-        teacher.load_state_dict(torch.load('./state_dicts/cct_v4.pt'))
+        teacher.load_state_dict(torch.load('VisionTransformers/state_dicts/cct_v4.p'))
         loss_fn = models.deit.HardDistillationLoss(teacher, 0.5).to(device)
     else:
         loss_fn = torch.nn.CrossEntropyLoss().to(device)
