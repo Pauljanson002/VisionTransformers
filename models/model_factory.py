@@ -7,7 +7,7 @@ from models.ViTLite import ViTLite
 from models.DeiTLite import DeiTLite
 
 def create_model(model_name: str):
-    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2','deit_lite']
+    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2','deit_lite','vit_lite_h']
     if model_name not in models:
         raise NotImplementedError("The model you asked is not implemented")
     else:
@@ -22,6 +22,14 @@ def create_model(model_name: str):
         elif model_name =='vit_lite_2':
             return ViTLite(
                 num_layers = 14,
+                num_heads = 4,
+                mlp_ratio = 2,
+                embedding_dim= 256,
+                patch_size= 4
+            )
+        elif model_name == 'vit_lite_h':
+            return ViTLite(
+                num_layers = 32,
                 num_heads = 4,
                 mlp_ratio = 2,
                 embedding_dim= 256,
