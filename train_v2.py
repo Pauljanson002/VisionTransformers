@@ -153,6 +153,7 @@ if __name__ == '__main__':
         loss_fn = torch.nn.CrossEntropyLoss().to(device)
     optimizer = utils.get_optimizer(args.optimizer, model.parameters(), learning_rate=args.learning_rate,
                                     weight_decay=args.weight_decay)
+
     print("----------------Training starts ---------------------------- ")
     print(f"On device :{device}  Model : {args.model} ")
     start_time = time()
