@@ -33,6 +33,7 @@ def get_parser():
     parser.add_argument('--optimizer', default='adamw', type=str)
     parser.add_argument('--weight_decay', default=0.01, type=float)
     parser.add_argument('--model', default='vit', type=str)
+    parser.add_argument('--resume', default='', type=str)
     return parser
 
 
@@ -59,7 +60,7 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
         else:
             loss = loss_fn(output, labels)
         if args.distill:
-            acc1 = accuracy(output[0],labels)
+            acc1 = accuracy(output[0], labels)
         else:
             acc1 = accuracy(output, labels)
         n += images.size(0)
@@ -74,12 +75,12 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
     return (total_loss / n), (total_acc / n)
 
 
-def adjust_learning_rate(optimizer, epoch, args):
-    lr = args.learning_rate
-    if hasattr(args, 'warmup') and epoch < args.warmup:
-        lr = lr / (args.warmup - epoch)
+def adjust_learning_rate(optimizer, epoch, learning_rate,final_epoch,warmup = 0):
+    lr = learning_rate
+    if warmup>0 and epoch < warmup:
+        lr = lr / (warmup - epoch)
     else:
-        lr *= 0.5 * (1. + math.cos(math.pi * (epoch - args.warmup) / (args.epoch - args.warmup)))
+        lr *= 0.5 * (1. + math.cos(math.pi * (epoch - warmup) / (final_epoch - warmup)))
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -108,10 +109,10 @@ def validate_after_epoch(val_loader, model, loss_fn, device, args, epoch=None, t
     return avg_loss, avg_acc1
 
 
-def plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, epochs):
+def plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, intial_epoch,epochs):
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(2, 1)
-    x = [i for i in range(1, epochs + 1)]
+    x = [i for i in range(initial_epoch, epochs + 1)]
     axes[0].plot(x, training_losses, label='training')
     axes[0].plot(x, validation_losses, label='validation')
     axes[0].set_xlabel('epochs')
@@ -153,12 +154,21 @@ if __name__ == '__main__':
         loss_fn = torch.nn.CrossEntropyLoss().to(device)
     optimizer = utils.get_optimizer(args.optimizer, model.parameters(), learning_rate=args.learning_rate,
                                     weight_decay=args.weight_decay)
+    initial_epoch = 1
+    if args.resume != '':
+        checkpoint = torch.load(f"./checkpoints/{args.resume}")
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        initial_epoch = checkpoint['epoch']
+        last_acc1 = checkpoint['accuracy']
 
     print("----------------Training starts ---------------------------- ")
     print(f"On device :{device}  Model : {args.model} ")
     start_time = time()
-    for epoch in range(1, args.epoch + 1):
-        adjust_learning_rate(optimizer, epoch, args)
+    if args.epoch < initial_epoch:
+        initial_epoch = 1
+    for epoch in range(initial_epoch, args.epoch + 1):
+        adjust_learning_rate(optimizer, epoch,args.learning_rate,args.epoch,args.warmup)
         avg_training_loss, avg_training_acc = train_one_epoch(train_loader, model, loss_fn, optimizer, device, epoch,
                                                               args)
         if args.distill:
@@ -166,7 +176,8 @@ if __name__ == '__main__':
             avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss, device, args,
                                                                                epoch=epoch, time_begin=start_time)
         else:
-            avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss_fn, device, args,
+            avg_validation_loss, average_validation_acc = validate_after_epoch(test_loader, model, loss_fn, device,
+                                                                               args,
                                                                                epoch=epoch, time_begin=start_time)
         best_acc1 = max(average_validation_acc, best_acc1)
 
@@ -179,8 +190,14 @@ if __name__ == '__main__':
     total_mins = (time() - start_time) / 60
     print(f"Training finished in {total_mins:.2f} mins ")
     print(f"Best top-1 : {best_acc1:.2f} , final top-1:{average_validation_acc:.2f}")
+    model_dict = {
+        'epoch': args.epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'accuracy': best_acc1
+    }
     try:
-        torch.save(model.state_dict(), f"./state_dicts/{args.savename}")
+        torch.save(model_dict, f"./checkpoints/{args.savename}")
     except FileNotFoundError:
-        torch.save(model.state_dict(), f'./{args.savename}')
-    plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, epoch)
+        torch.save(model_dict, f'./{args.savename}')
+    plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies,initial_epoch, epoch)

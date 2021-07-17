@@ -5,35 +5,46 @@ from models.deit import Deit
 from models.cct import CCT
 from models.ViTLite import ViTLite
 from models.DeiTLite import DeiTLite
+from models.ViTLiteSeq import ViTLiteSeq
+
 
 def create_model(model_name: str):
-    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct','vit_lite_2','deit_lite','vit_lite_h']
+    models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct', 'vit_lite_2', 'deit_lite', 'vit_lite_h',
+              'vit_lite_seq']
     if model_name not in models:
         raise NotImplementedError("The model you asked is not implemented")
     else:
         if model_name == 'vit_lite':
             return ViTLite(
-                num_layers = 7,
-                num_heads = 4,
-                mlp_ratio = 2,
-                embedding_dim= 256,
-                patch_size= 4,
+                num_layers=7,
+                num_heads=4,
+                mlp_ratio=2,
+                embedding_dim=256,
+                patch_size=4,
             )
-        elif model_name =='vit_lite_2':
+        elif model_name == 'vit_lite_seq':
+            return ViTLiteSeq(
+                num_layers=14,
+                num_heads=4,
+                mlp_ratio=2,
+                embedding_dim=256,
+                patch_size=4
+            )
+        elif model_name == 'vit_lite_2':
             return ViTLite(
-                num_layers = 14,
-                num_heads = 4,
-                mlp_ratio = 2,
-                embedding_dim= 256,
-                patch_size= 4
+                num_layers=14,
+                num_heads=4,
+                mlp_ratio=2,
+                embedding_dim=256,
+                patch_size=4
             )
         elif model_name == 'vit_lite_h':
             return ViTLite(
-                num_layers = 32,
-                num_heads = 4,
-                mlp_ratio = 2,
-                embedding_dim= 256,
-                patch_size= 4
+                num_layers=32,
+                num_heads=4,
+                mlp_ratio=2,
+                embedding_dim=256,
+                patch_size=4
             )
         elif model_name == 'vit_naive':
             return ViTNaive()
