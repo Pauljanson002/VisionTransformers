@@ -4,16 +4,21 @@ import math
 import os
 
 import torch
-
+import wandb
+from torchvision import datasets, transforms
+from utils.augmentations import CIFAR10Policy
 import dataset
 import models.deit
 import models.model_factory
 import utils
-
+from tqdm import tqdm
 from time import time
 
+torch.backends.cudnn.benchmark = True
+torch.manual_seed(1)
+torch.cuda.manual_seed(1)
+
 data_path = '/data'
-data_set = 'cifar10'
 
 
 def get_parser():
@@ -33,7 +38,9 @@ def get_parser():
     parser.add_argument('--optimizer', default='adamw', type=str)
     parser.add_argument('--weight_decay', default=0.01, type=float)
     parser.add_argument('--model', default='vit', type=str)
+    parser.add_argument('--dataset', default='cifar10', type=str)
     parser.add_argument('--resume', default='', type=str)
+    parser.add_argument('--num_workers', default=0, type=int)
     return parser
 
 
@@ -51,7 +58,7 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
     model.train()
     total_loss, total_acc = 0, 0
     n = 0
-    for i, (images, labels) in enumerate(train_loader):
+    for i, (images, labels) in tqdm(enumerate(train_loader), total=len(train_loader)):
         images = images.to(device)
         labels = labels.to(device)
         output = model(images)
@@ -69,15 +76,15 @@ def train_one_epoch(train_loader, model: torch.nn.Module, loss_fn, optimizer, de
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        avg_loss, avg_acc1 = (total_loss / n), (total_acc / n)
-        if i % 10 == 0:
-            print(f"Training loss at epoch : {epoch}, Loss = {avg_loss:.4e} , Top-1 {avg_acc1:6.2f}")
+        # avg_loss, avg_acc1 = (total_loss / n), (total_acc / n)
+        # if i % 10 == 0:
+        #     print(f"Training loss at epoch : {epoch}, Loss = {avg_loss:.4e} , Top-1 {avg_acc1:6.2f}")
     return (total_loss / n), (total_acc / n)
 
 
-def adjust_learning_rate(optimizer, epoch, learning_rate,final_epoch,warmup = 0):
+def adjust_learning_rate(optimizer, epoch, learning_rate, final_epoch, warmup=0):
     lr = learning_rate
-    if warmup>0 and epoch < warmup:
+    if warmup > 0 and epoch < warmup:
         lr = lr / (warmup - epoch)
     else:
         lr *= 0.5 * (1. + math.cos(math.pi * (epoch - warmup) / (final_epoch - warmup)))
@@ -91,7 +98,7 @@ def validate_after_epoch(val_loader, model, loss_fn, device, args, epoch=None, t
     total_loss, total_accuracy = 0, 0
     n = 0
     with torch.no_grad():
-        for i, (images, labels) in enumerate(val_loader):
+        for i, (images, labels) in tqdm(enumerate(val_loader), total=len(val_loader)):
             images = images.to(device)
             labels = labels.to(device)
             output = model(images)
@@ -100,42 +107,36 @@ def validate_after_epoch(val_loader, model, loss_fn, device, args, epoch=None, t
             n += images.size(0)
             total_loss += float(loss.item() * images.size(0))
             total_accuracy += float(acc1 * images.size(0))
-            avg_loss, avg_acc1 = (total_loss / n), (total_accuracy / n)
-            if i % 10 == 0:
-                print(f"Validating loss at epoch : {epoch}, Loss = {avg_loss}, Top-1 {avg_acc1:6.2f}")
+            # avg_loss, avg_acc1 = (total_loss / n), (total_accuracy / n)
+            # if i % 10 == 0:
+            #     print(f"Validating loss at epoch : {epoch}, Loss = {avg_loss}, Top-1 {avg_acc1:6.2f}")
     avg_loss, avg_acc1 = (total_loss / n), (total_accuracy / n)
     total_mins = -1 if time_begin is None else (time() - time_begin) / 60
     print(f"Epoch : {epoch} Top-1 {avg_acc1:6.2f} Time:{total_mins:.2f}")
     return avg_loss, avg_acc1
 
 
-def plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies, intial_epoch,epochs):
-    import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(2, 1)
-    x = [i for i in range(initial_epoch, epochs + 1)]
-    axes[0].plot(x, training_losses, label='training')
-    axes[0].plot(x, validation_losses, label='validation')
-    axes[0].set_xlabel('epochs')
-    axes[0].set_ylabel('losses')
-    axes[0].legend()
-    axes[1].plot(x, training_accuracies, label='training')
-    axes[1].plot(x, validation_accuracies, label='validation')
-    axes[1].set_xlabel('epochs')
-    axes[1].set_ylabel('accuracies')
-    axes[1].legend()
-    try:
-        fig.savefig('./plots/temporary.png', dpi=fig.dpi)
-    except FileNotFoundError:
-        fig.savefig('./temporary.png', dpi=fig.dpi)
-
-
 if __name__ == '__main__':
     best_acc1 = 0
     parser = get_parser()
     args = parser.parse_args()
+    wandb.init(
+        project="Cifar100 on VitLite",
+        entity="Pauljanson002"
+    )
+    config = wandb.config
+    config.args = args
     model = models.create_model(args.model)
-    train_loader = torch.utils.data.DataLoader(dataset.cifar10, batch_size=args.batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(dataset.cifar10_val, batch_size=args.batch_size, shuffle=False)
+    if args.dataset == 'cifar100':
+        train_loader = torch.utils.data.DataLoader(dataset.cifar100, batch_size=args.batch_size, shuffle=True,
+                                                   num_workers=args.num_workers)
+        test_loader = torch.utils.data.DataLoader(dataset.cifar100_val, batch_size=args.batch_size, shuffle=False,
+                                                  num_workers=args.num_workers)
+    else:
+        train_loader = torch.utils.data.DataLoader(dataset.cifar10, batch_size=args.batch_size, shuffle=True,
+                                                   num_workers=args.num_workers)
+        test_loader = torch.utils.data.DataLoader(dataset.cifar10_val, batch_size=args.batch_size, shuffle=False,
+                                                  num_workers=args.num_workers)
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
 
@@ -168,7 +169,7 @@ if __name__ == '__main__':
     if args.epoch < initial_epoch:
         initial_epoch = 1
     for epoch in range(initial_epoch, args.epoch + 1):
-        adjust_learning_rate(optimizer, epoch,args.learning_rate,args.epoch,args.warmup)
+        adjust_learning_rate(optimizer, epoch, args.learning_rate, args.epoch, args.warmup)
         avg_training_loss, avg_training_acc = train_one_epoch(train_loader, model, loss_fn, optimizer, device, epoch,
                                                               args)
         if args.distill:
@@ -180,12 +181,12 @@ if __name__ == '__main__':
                                                                                args,
                                                                                epoch=epoch, time_begin=start_time)
         best_acc1 = max(average_validation_acc, best_acc1)
-
-        # For plotting
-        training_losses.append(avg_training_loss)
-        training_accuracies.append(avg_training_acc)
-        validation_losses.append(avg_validation_loss)
-        validation_accuracies.append(average_validation_acc)
+        wandb.log({
+            'training_accuracy': avg_training_acc,
+            'training_loss': avg_training_loss,
+            'validation_accuracy': average_validation_acc,
+            'validation_loss': avg_validation_loss
+        })
 
     total_mins = (time() - start_time) / 60
     print(f"Training finished in {total_mins:.2f} mins ")
@@ -200,4 +201,3 @@ if __name__ == '__main__':
         torch.save(model_dict, f"./checkpoints/{args.savename}")
     except FileNotFoundError:
         torch.save(model_dict, f'./{args.savename}')
-    plot_data(training_losses, training_accuracies, validation_losses, validation_accuracies,initial_epoch, epoch)
