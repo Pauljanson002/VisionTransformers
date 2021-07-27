@@ -10,7 +10,7 @@ from models.ViTLiteSeq import ViTLiteSeq
 
 def create_model(model_name: str):
     models = ['vit', 'vit_naive', 'vit_lite', 'vgg', 'deit', 'cct', 'vit_lite_2', 'deit_lite', 'vit_lite_h',
-              'vit_lite_seq']
+              'vit_lite_seq','vit_lite_100']
     if model_name not in models:
         raise NotImplementedError("The model you asked is not implemented")
     else:
@@ -21,6 +21,15 @@ def create_model(model_name: str):
                 mlp_ratio=2,
                 embedding_dim=256,
                 patch_size=4,
+            )
+        elif model_name == 'vit_lite_100':
+            return ViTLite(
+                num_layers = 7,
+                num_heads=8,
+                mlp_ratio= 4,
+                embedding_dim=256,
+                patch_size=4,
+                num_classes = 100
             )
         elif model_name == 'vit_lite_seq':
             return ViTLiteSeq(

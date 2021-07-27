@@ -91,10 +91,11 @@ def train_model(model, criterion, optimizer, scheduler, device, num_epochs=25):
 
 
 def fine_tune(limit=14):
-    model = create_model('cct')
+    model = create_model('vit_lite_h')
     device = (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
     model.to(device)
-    model.load_state_dict(torch.load('./state_dicts/cct_v4.pt'))
+    checkpoint = torch.load(f"./checkpoints/vit_lite_h_200.pt")
+    model.load_state_dict(checkpoint['model_state_dict'])
     print(f"Model : is loaded to {device}")
 
     for param in model.parameters():
@@ -112,7 +113,7 @@ def fine_tune(limit=14):
 
 if __name__ == '__main__':
     print("Fine tuning script")
-    for i in range(14,0,-1):
+    for i in range(32,0,-1):
         print(f"Number of transformer layers Active {i}")
         fine_tune(limit=i)
     print(accuracies)
