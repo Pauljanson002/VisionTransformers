@@ -42,7 +42,7 @@ def get_parser():
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--online',action='store_true')
-    parser.add_argument('--run_name',type=str,action='store_true')
+    parser.add_argument('--run_name',type=str,default='')
     return parser
 
 
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     )
     config = wandb.config
     config.args = args
-    if args.run_name:
+    if args.run_name !='':
         wandb.run.name = args.run_name
     model = models.create_model(args.model)
     wandb.watch(model)
@@ -208,3 +208,4 @@ if __name__ == '__main__':
         torch.save(model_dict, f"./checkpoints/{args.savename}")
     except FileNotFoundError:
         torch.save(model_dict, f'./{args.savename}')
+
