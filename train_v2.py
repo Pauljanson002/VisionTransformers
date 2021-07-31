@@ -41,6 +41,8 @@ def get_parser():
     parser.add_argument('--dataset', default='cifar10', type=str)
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--num_workers', default=0, type=int)
+    parser.add_argument('--online',action='store_true')
+    parser.add_argument('--run_name',type=str,action='store_true')
     return parser
 
 
@@ -120,13 +122,18 @@ if __name__ == '__main__':
     best_acc1 = 0
     parser = get_parser()
     args = parser.parse_args()
+    if not args.online:
+        os.environ['WANDB_MODE'] = 'offline'
     wandb.init(
         project="Cifar100 on VitLite",
         entity="Pauljanson002"
     )
     config = wandb.config
     config.args = args
+    if args.run_name:
+        wandb.run.name = args.run_name
     model = models.create_model(args.model)
+    wandb.watch(model)
     if args.dataset == 'cifar100':
         train_loader = torch.utils.data.DataLoader(dataset.cifar100, batch_size=args.batch_size, shuffle=True,
                                                    num_workers=args.num_workers)
