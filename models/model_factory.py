@@ -24,10 +24,10 @@ def create_model(model_name: str):
             )
         elif model_name == 'vit_lite_100':
             return ViTLite(
-                num_layers = 7,
+                num_layers = 14,
                 num_heads=8,
-                mlp_ratio= 4,
-                embedding_dim=256,
+                mlp_ratio= 2,
+                embedding_dim=512,
                 patch_size=4,
                 num_classes = 100
             )
